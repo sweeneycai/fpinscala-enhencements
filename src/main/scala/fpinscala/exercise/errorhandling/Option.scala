@@ -58,9 +58,9 @@ object Option {
     }
   }
 
-  // TODO
+  // TODO 拆到最底层组合成一个List，flatMap接受的函数中，由于存在Map，所以会生成我们想要的Option[List[A]]
   def sequence[A](a: List[Option[A]]): Option[List[A]] = a match {
-    case Nil => None
-    case h :: t => h flatMap ((hh: A) => sequence(t) map (hh :: _))
+    case Nil => Some(Nil)
+    case h :: t => h flatMap (hh => sequence(t) map (hh :: _))
   }
 }

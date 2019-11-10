@@ -28,4 +28,13 @@ class OptionSpec extends FlatSpec {
     assert(Option.variance(List(1, 2, 3)) != null)
     assert(Option.variance(List(0)).getOrElse() == 0)
   }
+
+  "flatMap" should "apply f to Option[A] and return Option[B]" in {
+    assert(p.flatMap(a => Option(a.toString)) == Option("3"))
+  }
+
+  "sequence" should "return Option[List[A]] when input List[Option[A]]" in {
+    assert(Option.sequence(List(Option(1), Option(2), Option(3))) != None)
+    assert(Option.sequence(List(Option(1), Option(2), Option(3))) == Option(List(1, 2, 3)))
+  }
 }
