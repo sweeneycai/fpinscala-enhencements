@@ -1,11 +1,11 @@
-package errorhandling
+package fpinscala.errorhandling
 
-import org.scalatest.FlatSpec
+import fpinscala.BaseSpec
 import fpinscala.exercise.errorhandling._
 
-class OptionSpec extends FlatSpec {
+class OptionSpec extends BaseSpec {
 
-  val p = Option(3)
+  val p: Option[Int] = Option(3)
 
   "map" should "apply function f to Option[A]" in {
     assert(p.map(_ + 1).getOrElse() == 4)
