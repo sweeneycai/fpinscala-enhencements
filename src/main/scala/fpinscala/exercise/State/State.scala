@@ -21,6 +21,12 @@ object RNG {
 
   val int: Rand[Int] = _.nextInt
 
+  /**
+   * Generate a unit of Rand with type A
+   * @param a An instance of A
+   * @tparam A Type A
+   * @return A unit of Rand with type A
+   */
   def unit[A](a: A): Rand[A] =
     rng => (a, rng)
 
@@ -83,17 +89,72 @@ object RNG {
   def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] =
     rng => {
       val (a, r1) = f(rng)
+      // g: A => Rand[B] expand g: A => RNG => (B, RNG)
       g(a)(r1) // We pass the new state along
     }
+
+  def both[A, B](ra: Rand[A], rb: Rand[B]): Rand[(A, B)] =
+    map2(ra, rb)((_, _))
+
+  def randIntDouble: Rand[(Int, Double)] = both(int, double)
+
+  def randDoubleInt: Rand[(Double, Int)] = both(double, int)
+
+  def _map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
+    flatMap(ra)(a => map(rb)(b => f(a, b)))
+
+  def _map[A, B](ra: Rand[A])(f: A => B): Rand[B] =
+    flatMap(ra)(a => unit(f(a)))
 }
+
+import State._
 
 case class State[S,+A](run: S => (A, S)) {
   def map[B](f: A => B): State[S, B] =
-    ???
+    // TODO: 为什么这个地方输入的a被识别为A
+    // 一个猜想是，由于map的返回值是State[S, B]类型的，并且flatMap接受的参数类型是A => State[S, B]
+    // 所以a被推断为A类型
+    flatMap(a => unit(f(a)))
+
   def map2[B,C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
-    ???
-  def flatMap[B](f: A => State[S, B]): State[S, B] =
-    ???
+    flatMap(a => sb.map(b => f(a, b)))
+
+  def flatMap[B](f: A => State[S, B]): State[S, B] = State(s => {
+    val (a, s1) = run(s)
+    f(a).run(s1)
+  })
+
+}
+
+object State {
+  type Rand[A] = State[RNG, A]
+
+  def unit[S, A](a: A): State[S, A] = State(s => (a, s))
+
+  // 这个地方要注意`unit`生成的类型
+  def sequenceViaFoldRight[S, A](f: List[State[S, A]]): State[S, List[A]] =
+    f.foldRight(unit[S, List[A]](List[A]()))((f, acc) => f.map2(acc)(_ :: _))
+
+  def sequence[S, A](f: List[State[S, A]]): State[S, List[A]] = {
+    @scala.annotation.tailrec
+    def go(s: S, actions: List[State[S, A]], acc: List[A]): (List[A], S) =
+      actions match {
+        case Nil => (acc.reverse, s)
+        case h :: t => h.run(s) match {
+          case (a, s2) => go(s2, t, acc.::(a))
+        }
+      }
+    State(s => go(s, f, List[A]()))
+  }
+
+  def modify[S](f: S => S): State[S, Unit] = for {
+    s <- get // Gets the current state and assigns it to `s`.
+    _ <- set(f(s)) // Sets the new state to `f` applied to `s`.
+  } yield ()
+
+  def get[S]: State[S, S] = State(s => (s, s))
+
+  def set[S](s: S): State[S, Unit] = State(_ => ((), s))
 }
 
 sealed trait Input
@@ -102,7 +163,18 @@ case object Turn extends Input
 
 case class Machine(locked: Boolean, candies: Int, coins: Int)
 
-object State {
-  type Rand[A] = State[RNG, A]
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
+// TODO
+object Candy {
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = for {
+    _ <- sequence(inputs map (modify[Machine] _ compose update))
+    s <- get
+  } yield (s.coins, s.candies)
+
+  def update: Input => Machine => Machine = (i: Input) => (s: Machine) => (i, s) match {
+    case (_, Machine(_, 0, _)) => s
+    case (Coin, Machine(false, _, _)) => s
+    case (Turn, Machine(true, _, _)) => s
+    case (Coin, Machine(true, candy, coin)) => Machine(locked = false, candy, coin + 1)
+    case (Turn, Machine(false, candy, coin)) => Machine(locked = true, candy - 1, coin)
+  }
 }
