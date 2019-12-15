@@ -1,9 +1,10 @@
-package datastructure
-import fpinscala.exercise.datastructure._
-import org.scalatest.FlatSpec
+package fpinscala.datastructure
 
-class TreeSpec extends FlatSpec {
-  val t = Branch(
+import fpinscala.BaseSpec
+import fpinscala.exercise.datastructure._
+
+class TreeSpec extends BaseSpec {
+  val t: Branch[Int] = Branch(
     Branch(
       Branch(Leaf(1), Leaf(2)),
       Leaf(3)
