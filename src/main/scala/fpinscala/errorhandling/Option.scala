@@ -1,5 +1,6 @@
-package fpinscala.exercise.errorhandling
-import scala.{Option => _, Either => _, Some => _}
+package fpinscala.errorhandling
+
+import scala.{Either => _, Option => _, Some => _}
 
 sealed trait Option[+A] {
   def map[B](f: A => B): Option[B] = this match {

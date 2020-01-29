@@ -1,10 +1,13 @@
-package fpinscala.exercise.datastructure
+package fpinscala.datastructure
 
 sealed trait Tree[+A]
+
 case class Leaf[A](value: A) extends Tree[A]
+
 case class Branch[A](l: Tree[A], r: Tree[A]) extends Tree[A]
 
 object Tree {
+
   implicit class TreeMethods[A](tree: Tree[A]) {
     def depth: Int = {
       def goDepth(tree: Tree[A]): Int = tree match {

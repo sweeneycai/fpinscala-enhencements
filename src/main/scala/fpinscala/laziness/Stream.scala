@@ -1,6 +1,6 @@
-package fpinscala.exercise.laziness
+package fpinscala.laziness
 
-import Stream._
+import fpinscala.laziness.Stream._
 
 sealed trait Stream[+A] {
   def toListRecursive: List[A] = this match {

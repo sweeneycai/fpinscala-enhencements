@@ -1,11 +1,11 @@
-package fpinscala.exercise.State
-
+package fpinscala.state
 
 trait RNG {
   def nextInt: (Int, RNG) // Should generate a random `Int`. We'll later define other functions in terms of `nextInt`.
 }
 
 object RNG {
+
   // NB - this was called SimpleRNG in the book text
 
   case class Simple(seed: Long) extends RNG {
@@ -107,7 +107,7 @@ object RNG {
     flatMap(ra)(a => unit(f(a)))
 }
 
-import State._
+import fpinscala.state.State._
 
 case class State[S,+A](run: S => (A, S)) {
   def map[B](f: A => B): State[S, B] =
