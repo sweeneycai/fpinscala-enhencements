@@ -1,7 +1,6 @@
 package fpinscala.errorhandling
 
 import fpinscala.BaseSpec
-import fpinscala.exercise.errorhandling._
 
 class OptionSpec extends BaseSpec {
 

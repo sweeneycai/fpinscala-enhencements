@@ -97,6 +97,16 @@ sealed trait Stream[+A] {
   def zipAll[B](s: Stream[B]): Stream[(Option[A], Option[B])] =
     zipWithAll(s)((a, b) => a -> b)
 
+  def zipWith[B, C](s2: Stream[B])(f: (A, B) => C): Stream[C] =
+    unfold((this, s2)) {
+      case (Cons(h1, t1), Cons(h2, t2)) =>
+        Some((f(h1(), h2()), (t1(), t2())))
+      case _ => None
+    }
+
+  def zip[B](s: Stream[B]): Stream[(A, B)] =
+    zipWith(s)((a, b) => (a, b))
+
   @scala.annotation.tailrec
   final def startWith[B >: A](s: Stream[B]): Boolean = (this, s) match {
     case (Cons(h1, t1), Cons(h2, t2)) if h1() == h2() => t1().startWith(t2())
@@ -121,7 +131,8 @@ sealed trait Stream[+A] {
   // todo
   def scanRight[B](z: B)(f: (A, => B) => B): Stream[B] =
     foldRight((z, Stream(z)))((a, p0) => {
-      // p0 is passed by-name and used in by-name args in f and cons. So use lazy val to ensure only one evaluation...
+      // p0 is passed by-name and used in by-name args in f and cons.
+      // So use lazy val to ensure only one evaluation...
       lazy val p1 = p0
       val b2 = f(a, p1._1)
       (b2, cons(b2, p1._2))

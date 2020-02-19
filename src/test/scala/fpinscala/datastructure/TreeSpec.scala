@@ -1,7 +1,6 @@
 package fpinscala.datastructure
 
 import fpinscala.BaseSpec
-import fpinscala.exercise.datastructure._
 
 class TreeSpec extends BaseSpec {
   val t: Branch[Int] = Branch(

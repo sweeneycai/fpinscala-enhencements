@@ -2,6 +2,8 @@ package fpinscala.parallelism
 
 import java.util.concurrent._
 
+import scala.language.implicitConversions
+
 
 object Par {
   // Par is a function, it accepts an ExecutorService and return a Future
@@ -33,6 +35,9 @@ object Par {
       val bf = b(es)
       UnitFuture(f(af.get, bf.get)) // This implementation of `map2` does _not_ respect timeouts, and eagerly waits for the returned futures. This means that even if you have passed in "forked" arguments, using this map2 on them will make them wait. It simply passes the `ExecutorService` on to both `Par` values, waits for the results of the Futures `af` and `bf`, applies `f` to them, and wraps them in a `UnitFuture`. In order to respect timeouts, we'd need a new `Future` implementation that records the amount of time spent evaluating `af`, then subtracts that time from the available time allocated for evaluating `bf`.
     }
+
+  def map2ViaFlatMap[A, B, C](a: Par[A], b: Par[B])(f: (A, B) => C): Par[C] =
+    flatMap(a)(aa => flatMap(b)(bb => unit(f(aa, bb))))
 
   def map3[A, B, C, D](a: Par[A], b: Par[B], c: Par[C])(f: (A, B, C) => D): Par[D] =
     es => {
@@ -153,7 +158,6 @@ object Par {
   implicit def toParOps[A](p: Par[A]): ParOps[A] = new ParOps(p)
 
   class ParOps[A](p: Par[A]) {}
-
 }
 
 object Examples {

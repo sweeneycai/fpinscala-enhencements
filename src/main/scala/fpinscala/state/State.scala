@@ -23,6 +23,7 @@ object RNG {
 
   /**
    * Generate a unit of Rand with type A
+   *
    * @param a An instance of A
    * @tparam A Type A
    * @return A unit of Rand with type A
@@ -30,7 +31,12 @@ object RNG {
   def unit[A](a: A): Rand[A] =
     rng => (a, rng)
 
-  def map[A,B](s: Rand[A])(f: A => B): Rand[B] =
+  def boolean(rng: RNG): (Boolean, RNG) =
+    rng.nextInt match {
+      case (i, rng2) => (i % 2 == 0, rng2)
+    }
+
+  def map[A, B](s: Rand[A])(f: A => B): Rand[B] =
     rng => {
       val (a, rng2) = s(rng)
       (f(a), rng2)
@@ -49,20 +55,20 @@ object RNG {
 
   def doubleViaMap: Rand[Double] = map(nonNegativeInt)(i => i / (Int.MaxValue + 1))
 
-  def intDouble(rng: RNG): ((Int,Double), RNG) = {
+  def intDouble(rng: RNG): ((Int, Double), RNG) = {
     val (l, r1) = nonNegativeInt(rng)
     val (d, r2) = double(r1)
     ((l, d), r2)
   }
 
-  def doubleInt(rng: RNG): ((Double,Int), RNG) = {
+  def doubleInt(rng: RNG): ((Double, Int), RNG) = {
     val ((i, d), r) = intDouble(rng)
     ((d, i), r)
   }
 
-  def double3(rng: RNG): ((Double,Double,Double), RNG) = {
+  def double3(rng: RNG): ((Double, Double, Double), RNG) = {
     val (d1, r1) = double(rng)
-    val (d2, r2) =double(r1)
+    val (d2, r2) = double(r1)
     val (d3, r3) = double(r2)
     ((d1, d2, d3), r3)
   }
@@ -76,7 +82,7 @@ object RNG {
     }
   }
 
-  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
+  def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
     rng => {
       val (a, r1) = ra(rng)
       val (b, r2) = rb(r1)
@@ -86,7 +92,7 @@ object RNG {
   def sequence[A](fs: List[Rand[A]]): Rand[List[A]] =
     fs.foldRight(unit(List[A]()))((f, acc) => map2(f, acc)(_ :: _))
 
-  def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] =
+  def flatMap[A, B](f: Rand[A])(g: A => Rand[B]): Rand[B] =
     rng => {
       val (a, r1) = f(rng)
       // g: A => Rand[B] expand g: A => RNG => (B, RNG)
@@ -109,14 +115,11 @@ object RNG {
 
 import fpinscala.state.State._
 
-case class State[S,+A](run: S => (A, S)) {
+case class State[S, +A](run: S => (A, S)) {
   def map[B](f: A => B): State[S, B] =
-    // TODO: 为什么这个地方输入的a被识别为A
-    // 一个猜想是，由于map的返回值是State[S, B]类型的，并且flatMap接受的参数类型是A => State[S, B]
-    // 所以a被推断为A类型
     flatMap(a => unit(f(a)))
 
-  def map2[B,C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
+  def map2[B, C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
     flatMap(a => sb.map(b => f(a, b)))
 
   def flatMap[B](f: A => State[S, B]): State[S, B] = State(s => {
@@ -144,6 +147,7 @@ object State {
           case (a, s2) => go(s2, t, acc.::(a))
         }
       }
+
     State(s => go(s, f, List[A]()))
   }
 
@@ -158,7 +162,9 @@ object State {
 }
 
 sealed trait Input
+
 case object Coin extends Input
+
 case object Turn extends Input
 
 case class Machine(locked: Boolean, candies: Int, coins: Int)

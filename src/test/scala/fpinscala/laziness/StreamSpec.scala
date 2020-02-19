@@ -1,7 +1,6 @@
 package fpinscala.laziness
 
 import fpinscala.BaseSpec
-import fpinscala.exercise.laziness._
 
 class StreamSpec extends BaseSpec {
 

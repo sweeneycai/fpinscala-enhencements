@@ -1,7 +1,6 @@
 package fpinscala.errorhandling
 
 import fpinscala.BaseSpec
-import fpinscala.exercise.errorhandling._
 
 class EitherSpec extends BaseSpec {
   val either: Either[Null, Int] = Either(null, 4)
